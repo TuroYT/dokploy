@@ -8,6 +8,7 @@ import { generateRandomDomain } from "@dokploy/server/templates";
 import { execAsyncRemote } from "@dokploy/server/utils/process/execAsync";
 import { manageDomain } from "@dokploy/server/utils/traefik/domain";
 import { getPublicIpWithFallback } from "@dokploy/server/wss/utils";
+import { validateDomainRestriction } from "@dokploy/server/utils/wildcard-restriction";
 import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
 import type { z } from "zod";
@@ -19,6 +20,15 @@ import { findServerById } from "./server";
 export type Domain = typeof domains.$inferSelect;
 
 export const createDomain = async (input: z.infer<typeof apiCreateDomain>) => {
+	// Validate domain restriction before creating
+	const restriction = await validateDomainRestriction(input.host?.trim() || "");
+	if (!restriction.valid) {
+		throw new TRPCError({
+			code: "BAD_REQUEST",
+			message: restriction.error || "Domain not allowed",
+		});
+	}
+
 	const result = await db.transaction(async (tx) => {
 		const domain = await tx
 			.insert(domains)
