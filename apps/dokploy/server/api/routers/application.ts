@@ -22,6 +22,7 @@ import {
 	removePreviewDeployment,
 	removeService,
 	removeTraefikConfig,
+	resolvePromotionImage,
 	startService,
 	startServiceRemote,
 	stopService,
@@ -792,6 +793,61 @@ export const applicationRouter = createTRPCRouter({
 				resourceName: updateApp.appName,
 			});
 			return true;
+		}),
+	promote: protectedProcedure
+		.input(
+			z.object({
+				applicationId: z.string().min(1),
+				targetApplicationId: z.string().min(1),
+			}),
+		)
+		.mutation(async ({ input, ctx }) => {
+			if (input.applicationId === input.targetApplicationId) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: "Pick another application to promote to",
+				});
+			}
+			await checkServicePermissionAndAccess(ctx, input.applicationId, {
+				deployment: ["create"],
+			});
+			await checkServicePermissionAndAccess(ctx, input.targetApplicationId, {
+				service: ["create"],
+				deployment: ["create"],
+			});
+			const [source, target] = await Promise.all([
+				findApplicationById(input.applicationId),
+				findApplicationById(input.targetApplicationId),
+			]);
+			// Owners and admins skip per-service checks, so the organization is checked here.
+			for (const app of [source, target]) {
+				if (
+					app.environment.project.organizationId !==
+					ctx.session.activeOrganizationId
+				) {
+					throw new TRPCError({
+						code: "UNAUTHORIZED",
+						message: "You are not authorized to access this application",
+					});
+				}
+			}
+
+			const { image, registry } = await resolvePromotionImage(source);
+			await updateApplication(target.applicationId, {
+				sourceType: "docker",
+				dockerImage: image,
+				registryUrl: registry.registryUrl,
+				username: registry.username,
+				password: registry.password,
+			});
+			await audit(ctx, {
+				action: "update",
+				resourceType: "application",
+				resourceId: target.applicationId,
+				resourceName: target.appName,
+				metadata: { promotedFrom: source.applicationId, image },
+			});
+			return image;
 		}),
 	refreshToken: protectedProcedure
 		.input(apiFindOneApplication)

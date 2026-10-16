@@ -10,6 +10,7 @@ import {
 	initializeNetwork,
 	initSchedules,
 	initVolumeBackupsCronJobs,
+	initWatchdogCronJobs,
 	sendDokployRestartNotifications,
 	setupDirectories,
 } from "@dokploy/server";
@@ -65,6 +66,7 @@ void app.prepare().then(async () => {
 			await initSchedules();
 			await initCancelDeployments();
 			await initVolumeBackupsCronJobs();
+			initWatchdogCronJobs();
 			await sendDokployRestartNotifications();
 		}
 		await initEnterpriseBackupCronJobs();

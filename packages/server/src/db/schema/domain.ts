@@ -57,6 +57,10 @@ export const domains = pgTable("domain", {
 	middlewares: text("middlewares").array().default(sql`ARRAY[]::text[]`),
 	forwardAuthEnabled: boolean("forwardAuthEnabled").notNull().default(false),
 	enabled: boolean("enabled").notNull().default(true),
+	uptimeMonitor: boolean("uptimeMonitor").notNull().default(false),
+	publicStatus: boolean("publicStatus").notNull().default(false),
+	uptimeStatus: text("uptimeStatus").$type<"up" | "down">(),
+	uptimeChangedAt: text("uptimeChangedAt"),
 });
 
 export const domainsRelations = relations(domains, ({ one }) => ({
@@ -97,6 +101,8 @@ export const apiCreateDomain = createSchema.pick({
 	stripPath: true,
 	middlewares: true,
 	forwardAuthEnabled: true,
+	uptimeMonitor: true,
+	publicStatus: true,
 });
 
 export const apiFindDomain = z.object({
@@ -131,5 +137,7 @@ export const apiUpdateDomain = createSchema
 		middlewares: true,
 		forwardAuthEnabled: true,
 		enabled: true,
+		uptimeMonitor: true,
+		publicStatus: true,
 	})
 	.merge(createSchema.pick({ domainId: true }).required());

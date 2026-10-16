@@ -19,7 +19,7 @@ import {
 } from "./utils";
 
 interface ServerThresholdPayload {
-	Type: "CPU" | "Memory";
+	Type: "CPU" | "Memory" | "Disk";
 	Value: number;
 	Threshold: number;
 	Message: string;

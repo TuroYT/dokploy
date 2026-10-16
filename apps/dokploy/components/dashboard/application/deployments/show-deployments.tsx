@@ -300,6 +300,21 @@ export const ShowDeployments = ({
 												status={deployment?.status}
 												className="size-2.5"
 											/>
+											{deployment.vulnerabilitySummary && (
+												<Badge
+													title="Trivy scan result, details in the deployment logs"
+													variant={
+														deployment.vulnerabilitySummary.startsWith(
+															"0 critical",
+														)
+															? "secondary"
+															: "destructive"
+													}
+													className="normal-case"
+												>
+													🛡️ {deployment.vulnerabilitySummary}
+												</Badge>
+											)}
 										</span>
 
 										<div className="flex flex-col gap-1">

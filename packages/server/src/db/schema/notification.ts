@@ -41,6 +41,7 @@ export const notifications = pgTable("notification", {
 	dokployBackup: boolean("dokployBackup").notNull().default(false),
 	dockerCleanup: boolean("dockerCleanup").notNull().default(false),
 	serverThreshold: boolean("serverThreshold").notNull().default(false),
+	uptimeAlert: boolean("uptimeAlert").notNull().default(false),
 	notificationType: notificationType("notificationType").notNull(),
 	createdAt: text("createdAt")
 		.notNull()
@@ -274,6 +275,7 @@ export const apiCreateSlack = notificationsSchema
 		appDeploy: true,
 		dockerCleanup: true,
 		serverThreshold: true,
+		uptimeAlert: true,
 	})
 	.extend({
 		webhookUrl: z.string().min(1),
@@ -303,6 +305,7 @@ export const apiCreateTelegram = notificationsSchema
 		appDeploy: true,
 		dockerCleanup: true,
 		serverThreshold: true,
+		uptimeAlert: true,
 	})
 	.extend({
 		botToken: z.string().min(1),
@@ -334,6 +337,7 @@ export const apiCreateDiscord = notificationsSchema
 		appDeploy: true,
 		dockerCleanup: true,
 		serverThreshold: true,
+		uptimeAlert: true,
 	})
 	.extend({
 		webhookUrl: z.string().min(1),
@@ -366,6 +370,7 @@ export const apiCreateEmail = notificationsSchema
 		appDeploy: true,
 		dockerCleanup: true,
 		serverThreshold: true,
+		uptimeAlert: true,
 	})
 	.extend({
 		smtpServer: z.string().min(1),
@@ -403,6 +408,7 @@ export const apiCreateResend = notificationsSchema
 		appDeploy: true,
 		dockerCleanup: true,
 		serverThreshold: true,
+		uptimeAlert: true,
 	})
 	.extend({
 		apiKey: z.string().min(1),
@@ -434,6 +440,7 @@ export const apiCreateGotify = notificationsSchema
 		appDeploy: true,
 		dockerCleanup: true,
 		serverThreshold: true,
+		uptimeAlert: true,
 	})
 	.extend({
 		serverUrl: z.string().min(1),
@@ -470,6 +477,7 @@ export const apiCreateNtfy = notificationsSchema
 		appDeploy: true,
 		dockerCleanup: true,
 		serverThreshold: true,
+		uptimeAlert: true,
 	})
 	.extend({
 		serverUrl: z.string().min(1),
@@ -503,6 +511,7 @@ export const apiCreateMattermost = notificationsSchema
 		appDeploy: true,
 		dockerCleanup: true,
 		serverThreshold: true,
+		uptimeAlert: true,
 	})
 	.extend({
 		webhookUrl: z.string().url(),
@@ -520,6 +529,7 @@ export const apiCreateMattermost = notificationsSchema
 		appDeploy: true,
 		dockerCleanup: true,
 		serverThreshold: true,
+		uptimeAlert: true,
 	});
 
 export const apiUpdateMattermost = apiCreateMattermost.partial().extend({
@@ -554,6 +564,7 @@ export const apiCreateCustom = notificationsSchema
 		appDeploy: true,
 		dockerCleanup: true,
 		serverThreshold: true,
+		uptimeAlert: true,
 	})
 	.extend({
 		endpoint: z.string().min(1),
@@ -582,6 +593,7 @@ export const apiCreateLark = notificationsSchema
 		appDeploy: true,
 		dockerCleanup: true,
 		serverThreshold: true,
+		uptimeAlert: true,
 	})
 	.extend({
 		webhookUrl: z.string().min(1),
@@ -609,6 +621,7 @@ export const apiCreateTeams = notificationsSchema
 		appDeploy: true,
 		dockerCleanup: true,
 		serverThreshold: true,
+		uptimeAlert: true,
 	})
 	.extend({
 		webhookUrl: z.string().min(1),
@@ -636,6 +649,7 @@ export const apiCreatePushover = notificationsSchema
 		appDeploy: true,
 		dockerCleanup: true,
 		serverThreshold: true,
+		uptimeAlert: true,
 	})
 	.extend({
 		userKey: z.string().min(1),
@@ -671,6 +685,7 @@ export const apiUpdatePushover = z.object({
 	appDeploy: z.boolean().optional(),
 	dockerCleanup: z.boolean().optional(),
 	serverThreshold: z.boolean().optional(),
+	uptimeAlert: z.boolean().optional(),
 });
 
 export const apiTestPushoverConnection = z

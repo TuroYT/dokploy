@@ -14,7 +14,7 @@ import { emailTailwindConfig } from "../tailwind-config";
 
 export type TemplateProps = {
 	serverName: string;
-	type: "CPU" | "Memory";
+	type: "CPU" | "Memory" | "Disk";
 	value: string;
 	threshold: string;
 	message: string;

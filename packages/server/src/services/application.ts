@@ -31,6 +31,7 @@ import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
 import type { z } from "zod";
 import { encodeBase64 } from "../utils/docker/utils";
+import { scanImageForVulnerabilities } from "../utils/docker/vulnerability-scan";
 import { getDokployUrl } from "./admin";
 import {
 	createDeployment,
@@ -231,6 +232,21 @@ export const deployApplication = async ({
 			await execAsync(commandWithLog);
 		}
 
+		if (application.vulnerabilityScan) {
+			const vulnerabilitySummary = await scanImageForVulnerabilities({
+				image:
+					application.sourceType === "docker"
+						? application.dockerImage || ""
+						: `${application.appName}:latest`,
+				logPath: deployment.logPath,
+				serverId,
+			});
+			if (vulnerabilitySummary) {
+				await updateDeployment(deployment.deploymentId, {
+					vulnerabilitySummary,
+				});
+			}
+		}
 		await mechanizeDockerContainer(application);
 		await updateDeploymentStatus(deployment.deploymentId, "done");
 		await updateApplicationStatus(applicationId, "done");
@@ -267,7 +283,7 @@ export const deployApplication = async ({
 			projectName: application.environment.project.name,
 			applicationName: application.name,
 			applicationType: "application",
-			// @ts-ignore
+			// @ts-expect-error
 			errorMessage: error?.message || "Error building",
 			buildLink,
 			organizationId: application.environment.project.organizationId,
@@ -321,6 +337,21 @@ export const rebuildApplication = async ({
 			await execAsyncRemote(serverId, commandWithLog);
 		} else {
 			await execAsync(commandWithLog);
+		}
+		if (application.vulnerabilityScan) {
+			const vulnerabilitySummary = await scanImageForVulnerabilities({
+				image:
+					application.sourceType === "docker"
+						? application.dockerImage || ""
+						: `${application.appName}:latest`,
+				logPath: deployment.logPath,
+				serverId,
+			});
+			if (vulnerabilitySummary) {
+				await updateDeployment(deployment.deploymentId, {
+					vulnerabilitySummary,
+				});
+			}
 		}
 		await mechanizeDockerContainer(application);
 		await updateDeploymentStatus(deployment.deploymentId, "done");

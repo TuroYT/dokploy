@@ -11,6 +11,7 @@ import { Tooltip as TooltipPrimitive } from "radix-ui";
 import { toast } from "sonner";
 import { ShowBuildChooseForm } from "@/components/dashboard/application/build/show";
 import { ShowProviderForm } from "@/components/dashboard/application/general/generic/show";
+import { PromoteApplication } from "@/components/dashboard/application/general/promote-application";
 import { DialogAction } from "@/components/shared/dialog-action";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -281,6 +282,13 @@ export const ShowGeneralApplication = ({ applicationId }: Props) => {
 							Open Terminal
 						</Button>
 					</DockerTerminalModal>
+					{canDeploy && canUpdateService && data && (
+						<PromoteApplication
+							applicationId={applicationId}
+							projectId={data.environment.projectId}
+							environmentId={data.environmentId}
+						/>
+					)}
 					{canUpdateService && (
 						<div className="flex flex-row items-center gap-2 justify-between rounded-md px-4 py-2 border col-span-2 md:col-span-1">
 							<span className="text-sm font-medium">Autodeploy</span>
@@ -322,6 +330,29 @@ export const ShowGeneralApplication = ({ applicationId }: Props) => {
 										})
 										.catch(() => {
 											toast.error("Error updating Clean Cache");
+										});
+								}}
+								className="flex flex-row gap-2 items-center data-[state=checked]:bg-primary"
+							/>
+						</div>
+					)}
+					{canUpdateService && (
+						<div className="flex flex-row items-center gap-2 justify-between rounded-md px-4 py-2 border col-span-2 md:col-span-1">
+							<span className="text-sm font-medium">Vulnerability Scan</span>
+							<Switch
+								aria-label="Toggle vulnerability scan after each build"
+								checked={data?.vulnerabilityScan || false}
+								onCheckedChange={async (enabled) => {
+									await update({
+										applicationId,
+										vulnerabilityScan: enabled,
+									})
+										.then(async () => {
+											toast.success("Vulnerability Scan Updated");
+											await refetch();
+										})
+										.catch(() => {
+											toast.error("Error updating Vulnerability Scan");
 										});
 								}}
 								className="flex flex-row gap-2 items-center data-[state=checked]:bg-primary"

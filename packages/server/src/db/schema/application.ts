@@ -125,6 +125,7 @@ export const applications = pgTable("application", {
 	refreshToken: text("refreshToken").$defaultFn(() => nanoid()),
 	sourceType: sourceType("sourceType").notNull().default("github"),
 	cleanCache: boolean("cleanCache").default(false),
+	vulnerabilityScan: boolean("vulnerabilityScan").notNull().default(false),
 	// Github
 	repository: text("repository"),
 	owner: text("owner"),

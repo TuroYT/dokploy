@@ -65,6 +65,8 @@ export const domain = z
 		path: z.string().min(1).optional(),
 		internalPath: z.string().optional(),
 		stripPath: z.boolean().optional(),
+		uptimeMonitor: z.boolean().optional(),
+		publicStatus: z.boolean().optional(),
 		port: z
 			.number()
 			.min(1, { message: "Port must be at least 1" })
@@ -242,6 +244,8 @@ export const AddDomain = ({ id, type, domainId = "", children }: Props) => {
 			path: undefined,
 			internalPath: undefined,
 			stripPath: false,
+			uptimeMonitor: false,
+			publicStatus: false,
 			port: undefined,
 			useCustomEntrypoint: false,
 			customEntrypoint: undefined,
@@ -255,6 +259,8 @@ export const AddDomain = ({ id, type, domainId = "", children }: Props) => {
 		mode: "onChange",
 	});
 
+	const { data: activeOrganization } = api.organization.active.useQuery();
+	const uptimeMonitor = form.watch("uptimeMonitor");
 	const certificateType = form.watch("certificateType");
 	const useCustomEntrypoint = form.watch("useCustomEntrypoint");
 	const https = form.watch("https");
@@ -270,6 +276,8 @@ export const AddDomain = ({ id, type, domainId = "", children }: Props) => {
 				path: data?.path || undefined,
 				internalPath: data?.internalPath || undefined,
 				stripPath: data?.stripPath || false,
+				uptimeMonitor: data?.uptimeMonitor || false,
+				publicStatus: data?.publicStatus || false,
 				port: data?.port || undefined,
 				useCustomEntrypoint: !!data.customEntrypoint,
 				customEntrypoint: data.customEntrypoint || undefined,
@@ -287,6 +295,8 @@ export const AddDomain = ({ id, type, domainId = "", children }: Props) => {
 				path: undefined,
 				internalPath: undefined,
 				stripPath: false,
+				uptimeMonitor: false,
+				publicStatus: false,
 				port: undefined,
 				useCustomEntrypoint: false,
 				customEntrypoint: undefined,
@@ -777,6 +787,65 @@ export const AddDomain = ({ id, type, domainId = "", children }: Props) => {
 										</FormItem>
 									)}
 								/>
+
+								<FormField
+									control={form.control}
+									name="uptimeMonitor"
+									render={({ field }) => (
+										<FormItem className="flex flex-row items-center justify-between p-3 border rounded-lg shadow-xs">
+											<div className="space-y-0.5">
+												<FormLabel>Uptime Monitoring</FormLabel>
+												<FormDescription>
+													Check this URL every minute and notify when it goes
+													down (enable "Uptime" in your notifications)
+												</FormDescription>
+											</div>
+											<FormControl>
+												<Switch
+													checked={field.value}
+													onCheckedChange={(checked) => {
+														field.onChange(checked);
+														if (!checked) form.setValue("publicStatus", false);
+													}}
+												/>
+											</FormControl>
+										</FormItem>
+									)}
+								/>
+
+								{uptimeMonitor && (
+									<FormField
+										control={form.control}
+										name="publicStatus"
+										render={({ field }) => (
+											<FormItem className="flex flex-row items-center justify-between p-3 border rounded-lg shadow-xs">
+												<div className="space-y-0.5">
+													<FormLabel>Show on Public Status Page</FormLabel>
+													<FormDescription>
+														Anyone with the link can see this hostname and its
+														status:{" "}
+														{activeOrganization && (
+															<a
+																href={`/status/${activeOrganization.id}`}
+																target="_blank"
+																rel="noopener noreferrer"
+																className="text-primary underline"
+															>
+																/status/{activeOrganization.id}
+															</a>
+														)}
+													</FormDescription>
+												</div>
+												<FormControl>
+													<Switch
+														checked={field.value}
+														onCheckedChange={field.onChange}
+													/>
+												</FormControl>
+											</FormItem>
+										)}
+									/>
+								)}
 
 								<FormField
 									control={form.control}

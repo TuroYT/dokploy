@@ -55,6 +55,7 @@ export const deployments = pgTable("deployment", {
 	startedAt: text("startedAt"),
 	finishedAt: text("finishedAt"),
 	errorMessage: text("errorMessage"),
+	vulnerabilitySummary: text("vulnerabilitySummary"),
 	scheduleId: text("scheduleId").references(
 		(): AnyPgColumn => schedules.scheduleId,
 		{ onDelete: "cascade" },
