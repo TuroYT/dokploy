@@ -97,24 +97,26 @@ export const EnvEditor = ({
 					{lines.map((line, i) =>
 						line.kind === "var" ? (
 							<div key={i} className="flex items-start gap-2">
-								<Input
-									aria-label="Variable name"
-									aria-invalid={dupes.has(line.key.trim())}
-									placeholder="KEY"
-									className="w-2/5 font-mono"
-									value={line.key}
-									// "=" would split the line and a leading "#" would turn it into a comment.
-									onChange={(e) =>
-										setVar(i, {
-											key: e.target.value
-												.replace(/=/g, "")
-												.replace(/^\s*#/, ""),
-										})
-									}
-									onPaste={(e) => onKeyPaste(i, e)}
-									autoComplete="off"
-								/>
-								<div className="flex-1">
+								<div className="w-2/5 shrink-0">
+									<Input
+										aria-label="Variable name"
+										aria-invalid={dupes.has(line.key.trim())}
+										placeholder="KEY"
+										className="font-mono"
+										value={line.key}
+										// "=" would split the line and a leading "#" would turn it into a comment.
+										onChange={(e) =>
+											setVar(i, {
+												key: e.target.value
+													.replace(/=/g, "")
+													.replace(/^\s*#/, ""),
+											})
+										}
+										onPaste={(e) => onKeyPaste(i, e)}
+										autoComplete="off"
+									/>
+								</div>
+								<div className="min-w-0 flex-1">
 									<Input
 										aria-label={`Value of ${line.key || "variable"}`}
 										placeholder="value"
