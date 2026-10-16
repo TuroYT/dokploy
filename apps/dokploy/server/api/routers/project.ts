@@ -915,6 +915,19 @@ export const projectRouter = createTRPCRouter({
 				if (input.includeServices) {
 					const servicesToDuplicate = input.selectedServices || [];
 
+					// Copying into another environment (e.g. cloning a whole environment) keeps
+					// the names and drops domains, since the same hostnames would clash in Traefik.
+					const isOtherEnvironment = (service: { environmentId: string }) =>
+						input.duplicateInSameProject &&
+						service.environmentId !== targetProject?.environmentId;
+					const copyName = (service: {
+						name: string;
+						environmentId: string;
+					}) =>
+						input.duplicateInSameProject && !isOtherEnvironment(service)
+							? `${service.name} (copy)`
+							: service.name;
+
 					const duplicateService = async (id: string, type: string) => {
 						switch (type) {
 							case "application": {
@@ -939,19 +952,19 @@ export const projectRouter = createTRPCRouter({
 								const newApplication = await createApplication({
 									...application,
 									appName: newAppName,
-									name: input.duplicateInSameProject
-										? `${application.name} (copy)`
-										: application.name,
+									name: copyName(application),
 									environmentId: targetProject?.environmentId || "",
 								});
 
-								for (const domain of domains) {
-									const { domainId, ...rest } = domain;
-									await createDomain({
-										...rest,
-										applicationId: newApplication.applicationId,
-										domainType: "application",
-									});
+								if (!isOtherEnvironment(application)) {
+									for (const domain of domains) {
+										const { domainId, ...rest } = domain;
+										await createDomain({
+											...rest,
+											applicationId: newApplication.applicationId,
+											domainType: "application",
+										});
+									}
 								}
 
 								for (const port of ports) {
@@ -1016,9 +1029,7 @@ export const projectRouter = createTRPCRouter({
 								const newCompose = await createCompose({
 									...compose,
 									appName: newAppName,
-									name: input.duplicateInSameProject
-										? `${compose.name} (copy)`
-										: compose.name,
+									name: copyName(compose),
 									environmentId: targetProject?.environmentId || "",
 								});
 
@@ -1031,13 +1042,15 @@ export const projectRouter = createTRPCRouter({
 									});
 								}
 
-								for (const domain of domains) {
-									const { domainId, ...rest } = domain;
-									await createDomain({
-										...rest,
-										composeId: newCompose.composeId,
-										domainType: "compose",
-									});
+								if (!isOtherEnvironment(compose)) {
+									for (const domain of domains) {
+										const { domainId, ...rest } = domain;
+										await createDomain({
+											...rest,
+											composeId: newCompose.composeId,
+											domainType: "compose",
+										});
+									}
 								}
 
 								break;
@@ -1054,9 +1067,7 @@ export const projectRouter = createTRPCRouter({
 								const newLibsql = await createLibsql({
 									...libsql,
 									appName: newAppName,
-									name: input.duplicateInSameProject
-										? `${libsql.name} (copy)`
-										: libsql.name,
+									name: copyName(libsql),
 									environmentId: targetProject?.environmentId || "",
 								});
 
@@ -1083,9 +1094,7 @@ export const projectRouter = createTRPCRouter({
 								const newMariadb = await createMariadb({
 									...mariadb,
 									appName: newAppName,
-									name: input.duplicateInSameProject
-										? `${mariadb.name} (copy)`
-										: mariadb.name,
+									name: copyName(mariadb),
 									environmentId: targetProject?.environmentId || "",
 								});
 
@@ -1119,9 +1128,7 @@ export const projectRouter = createTRPCRouter({
 								const newMongo = await createMongo({
 									...mongo,
 									appName: newAppName,
-									name: input.duplicateInSameProject
-										? `${mongo.name} (copy)`
-										: mongo.name,
+									name: copyName(mongo),
 									environmentId: targetProject?.environmentId || "",
 								});
 
@@ -1155,9 +1162,7 @@ export const projectRouter = createTRPCRouter({
 								const newMysql = await createMysql({
 									...mysql,
 									appName: newAppName,
-									name: input.duplicateInSameProject
-										? `${mysql.name} (copy)`
-										: mysql.name,
+									name: copyName(mysql),
 									environmentId: targetProject?.environmentId || "",
 								});
 
@@ -1191,9 +1196,7 @@ export const projectRouter = createTRPCRouter({
 								const newPostgres = await createPostgres({
 									...postgres,
 									appName: newAppName,
-									name: input.duplicateInSameProject
-										? `${postgres.name} (copy)`
-										: postgres.name,
+									name: copyName(postgres),
 									environmentId: targetProject?.environmentId || "",
 								});
 
@@ -1227,9 +1230,7 @@ export const projectRouter = createTRPCRouter({
 								const newRedis = await createRedis({
 									...redis,
 									appName: newAppName,
-									name: input.duplicateInSameProject
-										? `${redis.name} (copy)`
-										: redis.name,
+									name: copyName(redis),
 									environmentId: targetProject?.environmentId || "",
 								});
 

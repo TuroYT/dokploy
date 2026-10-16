@@ -78,6 +78,7 @@ export const AdvancedEnvironmentSelector = ({
 	const updateEnvironment = api.environment.update.useMutation();
 	const deleteEnvironment = api.environment.remove.useMutation();
 	const duplicateEnvironment = api.environment.duplicate.useMutation();
+	const duplicateServices = api.project.duplicate.useMutation();
 
 	// Refetch project data
 	const utils = api.useUtils();
@@ -167,7 +168,54 @@ export const AdvancedEnvironmentSelector = ({
 				description: environment.description || undefined,
 			});
 
-			toast.success("Environment duplicated successfully");
+			const services = [
+				...environment.applications.map((s) => ({
+					id: s.applicationId,
+					type: "application" as const,
+				})),
+				...environment.compose.map((s) => ({
+					id: s.composeId,
+					type: "compose" as const,
+				})),
+				...environment.libsql.map((s) => ({
+					id: s.libsqlId,
+					type: "libsql" as const,
+				})),
+				...environment.mariadb.map((s) => ({
+					id: s.mariadbId,
+					type: "mariadb" as const,
+				})),
+				...environment.mongo.map((s) => ({
+					id: s.mongoId,
+					type: "mongo" as const,
+				})),
+				...environment.mysql.map((s) => ({
+					id: s.mysqlId,
+					type: "mysql" as const,
+				})),
+				...environment.postgres.map((s) => ({
+					id: s.postgresId,
+					type: "postgres" as const,
+				})),
+				...environment.redis.map((s) => ({
+					id: s.redisId,
+					type: "redis" as const,
+				})),
+			];
+			if (services.length > 0) {
+				// The duplicate API takes the target environment as sourceEnvironmentId.
+				await duplicateServices.mutateAsync({
+					sourceEnvironmentId: result.environmentId,
+					name: result.name,
+					includeServices: true,
+					selectedServices: services,
+					duplicateInSameProject: true,
+				});
+			}
+
+			toast.success(
+				"Environment duplicated. Domains were not copied, add new ones before deploying.",
+			);
 			utils.project.one.invalidate({ projectId });
 
 			// Navigate to the new duplicated environment
