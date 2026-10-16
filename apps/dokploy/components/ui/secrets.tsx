@@ -1,8 +1,8 @@
 import type { CompletionSource } from "@codemirror/autocomplete";
-import { EyeIcon, EyeOffIcon } from "lucide-react";
-import { type CSSProperties, type ReactNode, useState } from "react";
+import type { ReactNode } from "react";
 import { useFormContext } from "react-hook-form";
-import { CodeEditor } from "@/components/shared/code-editor";
+import { CopyEnvDialog } from "@/components/shared/copy-env-dialog";
+import { EnvEditor } from "@/components/shared/env-editor";
 import { VaultImportDialog } from "@/components/shared/vault-import-dialog";
 import {
 	CardContent,
@@ -16,7 +16,6 @@ import {
 	FormItem,
 	FormMessage,
 } from "@/components/ui/form";
-import { Toggle } from "@/components/ui/toggle";
 
 interface Props {
 	name: string;
@@ -26,10 +25,10 @@ interface Props {
 	completionSource?: CompletionSource;
 	projectId?: string;
 	environmentId?: string;
+	serviceId?: string;
 }
 
 export const Secrets = (props: Props) => {
-	const [isVisible, setIsVisible] = useState(true);
 	const form = useFormContext<Record<string, string>>();
 
 	return (
@@ -41,6 +40,14 @@ export const Secrets = (props: Props) => {
 				</div>
 
 				<div className="flex items-center gap-2">
+					<CopyEnvDialog
+						projectId={props.serviceId && props.projectId}
+						serviceId={props.serviceId}
+						currentEnv={form.watch(props.name) ?? ""}
+						onImport={(next) =>
+							form.setValue(props.name, next, { shouldDirty: true })
+						}
+					/>
 					<VaultImportDialog
 						projectId={props.projectId}
 						environmentId={props.environmentId}
@@ -49,17 +56,6 @@ export const Secrets = (props: Props) => {
 							form.setValue(props.name, next, { shouldDirty: true })
 						}
 					/>
-					<Toggle
-						aria-label="Toggle bold"
-						pressed={isVisible}
-						onPressedChange={setIsVisible}
-					>
-						{isVisible ? (
-							<EyeOffIcon className="h-4 w-4 text-muted-foreground" />
-						) : (
-							<EyeIcon className="h-4 w-4 text-muted-foreground" />
-						)}
-					</Toggle>
 				</div>
 			</CardHeader>
 			<CardContent className="w-full space-y-4 p-0">
@@ -69,19 +65,12 @@ export const Secrets = (props: Props) => {
 					render={({ field }) => (
 						<FormItem className="w-full">
 							<FormControl>
-								<CodeEditor
-									style={
-										{
-											WebkitTextSecurity: isVisible ? "disc" : null,
-										} as CSSProperties
-									}
-									language="properties"
+								<EnvEditor
+									value={field.value}
+									onChange={field.onChange}
 									completionSource={props.completionSource}
-									disabled={isVisible}
-									lineWrapping
 									placeholder={props.placeholder}
 									className="h-96 font-mono"
-									{...field}
 								/>
 							</FormControl>
 

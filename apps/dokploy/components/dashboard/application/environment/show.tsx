@@ -1,9 +1,10 @@
 import { standardSchemaResolver as zodResolver } from "@hookform/resolvers/standard-schema";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { useEnvCompletionSource } from "@/components/shared/env-autocomplete";
+import { EnvRedeployAlert } from "@/components/shared/env-redeploy-alert";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -34,6 +35,7 @@ interface Props {
 export const ShowEnvironment = ({ applicationId }: Props) => {
 	const { data: permissions } = api.user.getPermissions.useQuery();
 	const canWrite = permissions?.envVars.write ?? false;
+	const [needsDeploy, setNeedsDeploy] = useState(false);
 	const { mutateAsync, isPending } =
 		api.application.saveEnvironment.useMutation();
 
@@ -97,6 +99,7 @@ export const ShowEnvironment = ({ applicationId }: Props) => {
 		})
 			.then(async () => {
 				toast.success("Environments Added");
+				setNeedsDeploy(true);
 				form.reset(formData);
 				await refetch();
 			})
@@ -136,6 +139,13 @@ export const ShowEnvironment = ({ applicationId }: Props) => {
 					onSubmit={form.handleSubmit(onSubmit)}
 					className="flex w-full flex-col gap-4"
 				>
+					{needsDeploy && (
+						<EnvRedeployAlert
+							id={applicationId}
+							type="application"
+							onDeployed={() => setNeedsDeploy(false)}
+						/>
+					)}
 					<Secrets
 						name="env"
 						title="Environment Settings"
@@ -153,6 +163,7 @@ export const ShowEnvironment = ({ applicationId }: Props) => {
 						completionSource={completionSource}
 						projectId={data?.environment?.projectId}
 						environmentId={data?.environment?.environmentId}
+						serviceId={applicationId}
 					/>
 					{data?.buildType === "dockerfile" && (
 						<Secrets

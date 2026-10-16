@@ -1,11 +1,12 @@
 import { standardSchemaResolver as zodResolver } from "@hookform/resolvers/standard-schema";
-import { EyeIcon, EyeOffIcon } from "lucide-react";
-import { type CSSProperties, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
-import { CodeEditor } from "@/components/shared/code-editor";
+import { CopyEnvDialog } from "@/components/shared/copy-env-dialog";
 import { useEnvCompletionSource } from "@/components/shared/env-autocomplete";
+import { EnvEditor } from "@/components/shared/env-editor";
+import { EnvRedeployAlert } from "@/components/shared/env-redeploy-alert";
 import { VaultImportDialog } from "@/components/shared/vault-import-dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,7 +26,6 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Switch } from "@/components/ui/switch";
-import { Toggle } from "@/components/ui/toggle";
 import { api } from "@/utils/api";
 import type { ServiceType } from "../advanced/show-resources";
 
@@ -44,6 +44,7 @@ interface Props {
 export const ShowEnvironment = ({ id, type }: Props) => {
 	const { data: permissions } = api.user.getPermissions.useQuery();
 	const canWrite = permissions?.envVars.write ?? false;
+	const [needsDeploy, setNeedsDeploy] = useState(false);
 	const queryMap = {
 		compose: () =>
 			api.compose.one.useQuery({ composeId: id }, { enabled: !!id }),
@@ -59,7 +60,6 @@ export const ShowEnvironment = ({ id, type }: Props) => {
 	const { data, refetch } = queryMap[type]
 		? queryMap[type]()
 		: api.mongo.one.useQuery({ mongoId: id }, { enabled: !!id });
-	const [isEnvVisible, setIsEnvVisible] = useState(true);
 	const completionSource = useEnvCompletionSource({
 		projectEnv: data?.environment?.project?.env,
 		environmentEnv: data?.environment?.env,
@@ -129,6 +129,7 @@ export const ShowEnvironment = ({ id, type }: Props) => {
 		})
 			.then(async () => {
 				toast.success("Environments Added");
+				setNeedsDeploy(true);
 				await refetch();
 			})
 			.catch(() => {
@@ -173,18 +174,6 @@ export const ShowEnvironment = ({ id, type }: Props) => {
 							)}
 						</CardDescription>
 					</div>
-
-					<Toggle
-						aria-label="Toggle bold"
-						pressed={isEnvVisible}
-						onPressedChange={setIsEnvVisible}
-					>
-						{isEnvVisible ? (
-							<EyeOffIcon className="h-4 w-4 text-muted-foreground" />
-						) : (
-							<EyeIcon className="h-4 w-4 text-muted-foreground" />
-						)}
-					</Toggle>
 				</CardHeader>
 				<CardContent>
 					<Form {...form}>
@@ -193,12 +182,29 @@ export const ShowEnvironment = ({ id, type }: Props) => {
 							onSubmit={form.handleSubmit(onSubmit)}
 							className="w-full space-y-4"
 						>
+							{needsDeploy && (
+								<EnvRedeployAlert
+									id={id}
+									type={type}
+									onDeployed={() => setNeedsDeploy(false)}
+								/>
+							)}
 							<FormField
 								control={form.control}
 								name="environment"
 								render={({ field }) => (
 									<FormItem>
-										<div className="flex justify-end">
+										<div className="flex justify-end gap-2">
+											<CopyEnvDialog
+												projectId={data?.environment?.projectId}
+												serviceId={id}
+												currentEnv={field.value ?? ""}
+												onImport={(next) =>
+													form.setValue("environment", next, {
+														shouldDirty: true,
+													})
+												}
+											/>
 											<VaultImportDialog
 												projectId={data?.environment?.projectId}
 												environmentId={data?.environment?.environmentId}
@@ -211,21 +217,13 @@ export const ShowEnvironment = ({ id, type }: Props) => {
 											/>
 										</div>
 										<FormControl className="">
-											<CodeEditor
-												style={
-													{
-														WebkitTextSecurity: isEnvVisible ? "disc" : null,
-													} as CSSProperties
-												}
-												language="properties"
+											<EnvEditor
+												value={field.value}
+												onChange={field.onChange}
 												completionSource={completionSource}
-												disabled={isEnvVisible}
 												className="font-mono"
 												wrapperClassName="compose-file-editor"
-												placeholder={`NODE_ENV=production
-PORT=3000
-														`}
-												{...field}
+												placeholder={"NODE_ENV=production\nPORT=3000"}
 											/>
 										</FormControl>
 										<FormMessage />
