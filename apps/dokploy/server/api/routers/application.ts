@@ -38,6 +38,7 @@ import { db } from "@dokploy/server/db";
 import { canEditDeployGitSource } from "@dokploy/server/services/git-provider";
 import {
 	addNewService,
+	checkPermission,
 	checkServiceAccess,
 	checkServicePermissionAndAccess,
 	findMemberByUserId,
@@ -815,6 +816,8 @@ export const applicationRouter = createTRPCRouter({
 				service: ["create"],
 				deployment: ["create"],
 			});
+			// Promotion copies the registry credentials into the target, so only registry managers may do it.
+			await checkPermission(ctx, { registry: ["create"] });
 			const [source, target] = await Promise.all([
 				findApplicationById(input.applicationId),
 				findApplicationById(input.targetApplicationId),
