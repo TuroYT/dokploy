@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth-client";
+import { api } from "@/utils/api";
 
 const ssoEmailSchema = z.object({
 	email: z
@@ -39,16 +40,18 @@ export function SignInWithSSO({
 	enforce = false,
 }: SignInWithSSOProps) {
 	const [expanded, setExpanded] = useState(false);
+	const [pendingProvider, setPendingProvider] = useState<string | null>(null);
+	const { data: providers } = api.sso.loginProviders.useQuery();
 
 	const form = useForm<SSOEmailForm>({
 		resolver: zodResolver(ssoEmailSchema),
 		defaultValues: { email: "" },
 	});
 
-	const onSubmit = async (values: SSOEmailForm) => {
+	const signIn = async (target: { email: string } | { providerId: string }) => {
 		try {
 			const { data, error } = await authClient.signIn.sso({
-				email: values.email,
+				...target,
 				callbackURL: "/dashboard/home",
 				errorCallbackURL: "/",
 			});
@@ -65,6 +68,41 @@ export function SignInWithSSO({
 			);
 		}
 	};
+
+	const onSubmit = (values: SSOEmailForm) => signIn(values);
+
+	const signInWithProvider = async (providerId: string) => {
+		setPendingProvider(providerId);
+		await signIn({ providerId });
+		setPendingProvider(null);
+	};
+
+	if (providers && providers.length > 0) {
+		return (
+			<div className="mb-4 space-y-2">
+				{providers.map(({ providerId }) => (
+					<Button
+						key={providerId}
+						type="button"
+						variant="outline"
+						className="w-full"
+						disabled={pendingProvider !== null}
+						onClick={() => signInWithProvider(providerId)}
+					>
+						{pendingProvider === providerId ? (
+							<Loader2 className="mr-2 size-4 animate-spin" />
+						) : (
+							<LogIn className="mr-2 size-4" />
+						)}
+						{providers.length === 1
+							? "Sign in with SSO"
+							: `Sign in with ${providerId}`}
+					</Button>
+				))}
+				{!enforce && children}
+			</div>
+		);
+	}
 
 	if (!expanded) {
 		return (

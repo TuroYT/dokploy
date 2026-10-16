@@ -52,6 +52,17 @@ export const ssoRouter = createTRPCRouter({
 		const settings = await getWebServerSettings();
 		return settings?.enforceSSO ?? false;
 	}),
+	// Lets the login page send users straight to the IdP instead of asking for an email.
+	// Cloud is multi-tenant, so listing providers there would leak other orgs' IdPs.
+	loginProviders: publicProcedure.query(async () => {
+		if (IS_CLOUD) {
+			return [];
+		}
+		return db.query.ssoProvider.findMany({
+			columns: { providerId: true },
+			orderBy: [asc(ssoProvider.createdAt)],
+		});
+	}),
 	listProviders: enterpriseProcedure.query(async ({ ctx }) => {
 		const providers = await db.query.ssoProvider.findMany({
 			where: eq(ssoProvider.organizationId, ctx.session.activeOrganizationId),
