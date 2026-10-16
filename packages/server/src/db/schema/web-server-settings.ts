@@ -277,3 +277,7 @@ export const domainRestrictionConfigSchema = z.object({
 		),
 	),
 });
+
+export const apiUpdateDomainRestriction = z.object({
+	domainRestrictionConfig: domainRestrictionConfigSchema,
+});
