@@ -552,7 +552,8 @@ export const settingsRouter = createTRPCRouter({
 	}),
 
 	getDokployVersion: protectedProcedure.query(() => {
-		return packageInfo.version;
+		// Fork marker shown in the UI; package.json stays upstream's to avoid merge conflicts.
+		return `${packageInfo.version}-turo`;
 	}),
 	getReleaseTag: protectedProcedure.query(() => {
 		return getDokployImageTag();
