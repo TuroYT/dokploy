@@ -19,15 +19,18 @@ import { findServerById } from "./server";
 
 export type Domain = typeof domains.$inferSelect;
 
-export const createDomain = async (input: z.infer<typeof apiCreateDomain>) => {
-	// Validate domain restriction before creating
-	const restriction = await validateDomainRestriction(input.host?.trim() || "");
+const assertDomainAllowed = async (host: string) => {
+	const restriction = await validateDomainRestriction(host.trim());
 	if (!restriction.valid) {
 		throw new TRPCError({
 			code: "BAD_REQUEST",
 			message: restriction.error || "Domain not allowed",
 		});
 	}
+};
+
+export const createDomain = async (input: z.infer<typeof apiCreateDomain>) => {
+	await assertDomainAllowed(input.host || "");
 
 	const result = await db.transaction(async (tx) => {
 		const domain = await tx
@@ -138,6 +141,9 @@ export const updateDomainById = async (
 	domainId: string,
 	domainData: Partial<Domain>,
 ) => {
+	if (domainData.host !== undefined) {
+		await assertDomainAllowed(domainData.host);
+	}
 	const domain = await db
 		.update(domains)
 		.set({
