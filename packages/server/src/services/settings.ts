@@ -283,22 +283,12 @@ fi`;
 export const reloadDockerResource = async (
 	resourceName: string,
 	serverId?: string,
-	version?: string,
 ) => {
 	const resourceType = await getDockerResourceType(resourceName, serverId);
 	let command = "";
 	if (resourceType === "service") {
-		if (resourceName === "dokploy") {
-			const currentImageTag = getDokployImageTag();
-			let imageTag = version;
-			if (currentImageTag === "canary" || currentImageTag === "feature") {
-				imageTag = currentImageTag;
-			}
-
-			command = `docker service update --force --image dokploy/dokploy:${imageTag} ${resourceName}`;
-		} else {
-			command = `docker service update --force ${resourceName}`;
-		}
+		// Fork: keep the running image so a reload never swaps back to dokploy/dokploy.
+		command = `docker service update --force ${resourceName}`;
 	} else if (resourceType === "standalone") {
 		command = `docker restart ${resourceName}`;
 	} else {

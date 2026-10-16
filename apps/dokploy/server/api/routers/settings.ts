@@ -16,7 +16,6 @@ import {
 	getDockerDiskUsage,
 	getDokployImageTag,
 	getLogCleanupStatus,
-	getUpdateData,
 	getWebServerSettings,
 	IS_CLOUD,
 	parseRawConfig,
@@ -34,7 +33,6 @@ import {
 	reloadDockerResource,
 	sendDockerCleanupNotifications,
 	setupGPUSupport,
-	spawnAsync,
 	startLogCleanup,
 	stopLogCleanup,
 	updateLetsEncryptEmail,
@@ -93,7 +91,7 @@ export const settingsRouter = createTRPCRouter({
 		if (IS_CLOUD) {
 			return true;
 		}
-		await reloadDockerResource("dokploy", undefined, packageInfo.version);
+		await reloadDockerResource("dokploy");
 		await audit(ctx, {
 			action: "reload",
 			resourceType: "settings",
@@ -543,36 +541,13 @@ export const settingsRouter = createTRPCRouter({
 			});
 			return true;
 		}),
-	getUpdateData: protectedProcedure.mutation(async () => {
-		if (IS_CLOUD) {
-			return DEFAULT_UPDATE_DATA;
-		}
-
-		return await getUpdateData(packageInfo.version);
-	}),
-	updateServer: adminProcedure.mutation(async ({ ctx }) => {
-		if (IS_CLOUD) {
-			return true;
-		}
-
-		const data = await getUpdateData(packageInfo.version);
-		if (data.updateAvailable) {
-			void spawnAsync("docker", [
-				"service",
-				"update",
-				"--force",
-				"--image",
-				`dokploy/dokploy:${data.latestVersion}`,
-				"dokploy",
-			]);
-			await audit(ctx, {
-				action: "update",
-				resourceType: "settings",
-				resourceName: "dokploy-version",
-			});
-		}
-
-		return true;
+	// Fork: updates ship from the fork's prod branch (GHCR + server auto-update), never Docker Hub.
+	getUpdateData: protectedProcedure.mutation(async () => DEFAULT_UPDATE_DATA),
+	updateServer: adminProcedure.mutation(async () => {
+		throw new TRPCError({
+			code: "PRECONDITION_FAILED",
+			message: "Updates are deployed from the fork's prod branch",
+		});
 	}),
 
 	getDokployVersion: protectedProcedure.query(() => {

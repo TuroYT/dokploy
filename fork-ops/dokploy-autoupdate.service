@@ -1,0 +1,9 @@
+[Unit]
+Description=Deploy ghcr.io/turoyt/dokploy:prod if it changed
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/dokploy-autoupdate
+TimeoutStartSec=30min
