@@ -3,6 +3,7 @@ name: Fork image
 on:
   push:
     branches: [prod]
+    paths-ignore: ["fork-ops/**"]
   workflow_dispatch:
 
 concurrency:

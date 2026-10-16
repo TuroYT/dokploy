@@ -1,9 +1,9 @@
 [Unit]
-Description=Poll the Dokploy fork image every 5 minutes
+Description=Poll the Dokploy fork image every minute
 
 [Timer]
-OnBootSec=5min
-OnUnitActiveSec=5min
+OnBootSec=2min
+OnUnitActiveSec=1min
 
 [Install]
 WantedBy=timers.target
