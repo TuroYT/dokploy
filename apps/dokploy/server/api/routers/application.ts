@@ -13,6 +13,7 @@ import {
 	getContainerLogs,
 	getWebServerSettings,
 	IS_CLOUD,
+	loadEnvExample,
 	mechanizeDockerContainer,
 	readConfig,
 	readRemoteConfig,
@@ -553,6 +554,7 @@ export const applicationRouter = createTRPCRouter({
 				triggerType: input.triggerType,
 				enableSubmodules: input.enableSubmodules,
 			});
+			await loadEnvExample(input.applicationId);
 			const application = await findApplicationById(input.applicationId);
 			await audit(ctx, {
 				action: "update",
@@ -581,6 +583,7 @@ export const applicationRouter = createTRPCRouter({
 				watchPaths: input.watchPaths,
 				enableSubmodules: input.enableSubmodules,
 			});
+			await loadEnvExample(input.applicationId);
 			const application = await findApplicationById(input.applicationId);
 			await audit(ctx, {
 				action: "update",
@@ -608,6 +611,7 @@ export const applicationRouter = createTRPCRouter({
 				watchPaths: input.watchPaths,
 				enableSubmodules: input.enableSubmodules,
 			});
+			await loadEnvExample(input.applicationId);
 			const application = await findApplicationById(input.applicationId);
 			await audit(ctx, {
 				action: "update",
@@ -634,6 +638,7 @@ export const applicationRouter = createTRPCRouter({
 				watchPaths: input.watchPaths,
 				enableSubmodules: input.enableSubmodules,
 			});
+			await loadEnvExample(input.applicationId);
 			const application = await findApplicationById(input.applicationId);
 			await audit(ctx, {
 				action: "update",
@@ -682,6 +687,7 @@ export const applicationRouter = createTRPCRouter({
 				watchPaths: input.watchPaths,
 				enableSubmodules: input.enableSubmodules,
 			});
+			await loadEnvExample(input.applicationId);
 			const application = await findApplicationById(input.applicationId);
 			await audit(ctx, {
 				action: "update",

@@ -178,6 +178,57 @@ export const updateApplicationStatus = async (
 	return application;
 };
 
+const gitBuildPath = (app: Awaited<ReturnType<typeof findApplicationById>>) =>
+	({
+		github: app.buildPath,
+		gitlab: app.gitlabBuildPath,
+		gitea: app.giteaBuildPath,
+		bitbucket: app.bitbucketBuildPath,
+		git: app.customGitBuildPath,
+	})[app.sourceType as string] || "/";
+
+// Fills empty variables from the repository's .env.example, best effort: a failure here must not block saving the source.
+export const loadEnvExample = async (applicationId: string) => {
+	try {
+		const application = await findApplicationById(applicationId);
+		if (application.env?.trim()) return;
+		const serverId = application.buildServerId || application.serverId;
+		const entity = { ...application, serverId };
+
+		let clone = "";
+		if (application.sourceType === "github") {
+			clone = await cloneGithubRepository(entity);
+		} else if (application.sourceType === "gitlab") {
+			clone = await cloneGitlabRepository(entity);
+		} else if (application.sourceType === "gitea") {
+			clone = await cloneGiteaRepository(entity);
+		} else if (application.sourceType === "bitbucket") {
+			clone = await cloneBitbucketRepository(entity);
+		} else if (application.sourceType === "git") {
+			clone = await cloneGitRepository(entity);
+		} else {
+			return;
+		}
+
+		const code = join(
+			paths(!!serverId).APPLICATIONS_PATH,
+			application.appName,
+			"code",
+		);
+		const file = join(code, gitBuildPath(application), ".env.example");
+		// realpath follows symlinks, so a repo cannot point .env.example at a file outside its own checkout.
+		const command = `set -e; (${clone}) >/dev/null 2>&1; base=$(realpath -e -- ${quote([code])}); f=$(realpath -e -- ${quote([file])} 2>/dev/null) || exit 0; [ -f "$f" ] || exit 0; case "$f" in "$base"/*) head -c 65536 -- "$f";; esac`;
+
+		const { stdout } = serverId
+			? await execAsyncRemote(serverId, command)
+			: await execAsync(command);
+		const env = stdout;
+		if (env.trim()) await updateApplication(applicationId, { env });
+	} catch (error) {
+		console.error("Could not load .env.example", error);
+	}
+};
+
 export const deployApplication = async ({
 	applicationId,
 	titleLog = "Manual deployment",
@@ -215,43 +266,6 @@ export const deployApplication = async ({
 			command += await cloneGitRepository(applicationEntity);
 		} else if (application.sourceType === "docker") {
 			command += await buildRemoteDocker(application);
-		}
-
-		const isGitSource = [
-			"github",
-			"gitlab",
-			"gitea",
-			"bitbucket",
-			"git",
-		].includes(application.sourceType);
-		// Only the very first deployment: later on an empty env is a deliberate choice.
-		if (
-			isGitSource &&
-			!application.env?.trim() &&
-			application.deployments.length === 0
-		) {
-			const run = (cmd: string) =>
-				serverId ? execAsyncRemote(serverId, cmd) : execAsync(cmd);
-			await run(`(${command}) >> ${deployment.logPath} 2>&1`);
-			command = "set -e;";
-			const { APPLICATIONS_PATH } = paths(!!serverId);
-			const examplePath = join(
-				APPLICATIONS_PATH,
-				application.appName,
-				"code",
-				application.buildPath || "/",
-				".env.example",
-			);
-			const { stdout } = await run(
-				`cat ${quote([examplePath])} 2>/dev/null || true`,
-			);
-			if (stdout.trim()) {
-				application.env = stdout;
-				await updateApplication(applicationId, { env: stdout });
-				await run(
-					`echo "📄 Loaded variables from .env.example" >> ${deployment.logPath}`,
-				);
-			}
 		}
 
 		if (application.sourceType !== "docker") {
