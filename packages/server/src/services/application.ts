@@ -1,4 +1,5 @@
-import { docker } from "@dokploy/server/constants";
+import { join } from "node:path";
+import { docker, paths } from "@dokploy/server/constants";
 import { db } from "@dokploy/server/db";
 import {
 	type apiCreateApplication,
@@ -29,6 +30,7 @@ import { cloneGitlabRepository } from "@dokploy/server/utils/providers/gitlab";
 import { createTraefikConfig } from "@dokploy/server/utils/traefik/application";
 import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
+import { quote } from "shell-quote";
 import type { z } from "zod";
 import { encodeBase64 } from "../utils/docker/utils";
 import { scanImageForVulnerabilities } from "../utils/docker/vulnerability-scan";
@@ -213,6 +215,43 @@ export const deployApplication = async ({
 			command += await cloneGitRepository(applicationEntity);
 		} else if (application.sourceType === "docker") {
 			command += await buildRemoteDocker(application);
+		}
+
+		const isGitSource = [
+			"github",
+			"gitlab",
+			"gitea",
+			"bitbucket",
+			"git",
+		].includes(application.sourceType);
+		// Only the very first deployment: later on an empty env is a deliberate choice.
+		if (
+			isGitSource &&
+			!application.env?.trim() &&
+			application.deployments.length === 0
+		) {
+			const run = (cmd: string) =>
+				serverId ? execAsyncRemote(serverId, cmd) : execAsync(cmd);
+			await run(`(${command}) >> ${deployment.logPath} 2>&1`);
+			command = "set -e;";
+			const { APPLICATIONS_PATH } = paths(!!serverId);
+			const examplePath = join(
+				APPLICATIONS_PATH,
+				application.appName,
+				"code",
+				application.buildPath || "/",
+				".env.example",
+			);
+			const { stdout } = await run(
+				`cat ${quote([examplePath])} 2>/dev/null || true`,
+			);
+			if (stdout.trim()) {
+				application.env = stdout;
+				await updateApplication(applicationId, { env: stdout });
+				await run(
+					`echo "📄 Loaded variables from .env.example" >> ${deployment.logPath}`,
+				);
+			}
 		}
 
 		if (application.sourceType !== "docker") {
