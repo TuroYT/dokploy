@@ -201,15 +201,18 @@ export const loadEnvExample = async (
 		const entity = { ...application, serverId };
 
 		// The save mutations accept any provider id, so only use credentials the caller can already use.
+		// Pick the provider the clone will actually use, a stale id from a previous source must not pass the check.
 		const providerId = (
-			application.github ??
-			application.gitlab ??
-			application.gitea ??
-			application.bitbucket
-		)?.gitProviderId;
-		if (providerId) {
+			{
+				github: application.github,
+				gitlab: application.gitlab,
+				gitea: application.gitea,
+				bitbucket: application.bitbucket,
+			} as Record<string, { gitProviderId: string } | null | undefined>
+		)[application.sourceType]?.gitProviderId;
+		if (application.sourceType !== "git") {
 			const accessible = await getAccessibleGitProviderIds(session);
-			if (!accessible.has(providerId)) return;
+			if (!providerId || !accessible.has(providerId)) return;
 		}
 		if (application.customGitSSHKeyId) {
 			const key = await db.query.sshKeys.findFirst({
