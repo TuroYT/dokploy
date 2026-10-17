@@ -5,6 +5,7 @@ import {
 	type apiCreateApplication,
 	applications,
 	buildAppName,
+	sshKeys,
 } from "@dokploy/server/db/schema";
 import { getAdvancedStats } from "@dokploy/server/monitoring/utils";
 import {
@@ -29,7 +30,7 @@ import { cloneGithubRepository } from "@dokploy/server/utils/providers/github";
 import { cloneGitlabRepository } from "@dokploy/server/utils/providers/gitlab";
 import { createTraefikConfig } from "@dokploy/server/utils/traefik/application";
 import { TRPCError } from "@trpc/server";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { quote } from "shell-quote";
 import type { z } from "zod";
 import { encodeBase64 } from "../utils/docker/utils";
@@ -42,6 +43,7 @@ import {
 	updateDeploymentStatus,
 } from "./deployment";
 import { type Domain, getDomainHost } from "./domain";
+import { getAccessibleGitProviderIds } from "./git-provider";
 import {
 	createPreviewDeploymentComment,
 	getIssueComment,
@@ -188,12 +190,37 @@ const gitBuildPath = (app: Awaited<ReturnType<typeof findApplicationById>>) =>
 	})[app.sourceType as string] || "/";
 
 // Fills empty variables from the repository's .env.example, best effort: a failure here must not block saving the source.
-export const loadEnvExample = async (applicationId: string) => {
+export const loadEnvExample = async (
+	applicationId: string,
+	session: { userId: string; activeOrganizationId: string },
+) => {
 	try {
 		const application = await findApplicationById(applicationId);
 		if (application.env?.trim()) return;
 		const serverId = application.buildServerId || application.serverId;
 		const entity = { ...application, serverId };
+
+		// The save mutations accept any provider id, so only use credentials the caller can already use.
+		const providerId = (
+			application.github ??
+			application.gitlab ??
+			application.gitea ??
+			application.bitbucket
+		)?.gitProviderId;
+		if (providerId) {
+			const accessible = await getAccessibleGitProviderIds(session);
+			if (!accessible.has(providerId)) return;
+		}
+		if (application.customGitSSHKeyId) {
+			const key = await db.query.sshKeys.findFirst({
+				where: and(
+					eq(sshKeys.sshKeyId, application.customGitSSHKeyId),
+					eq(sshKeys.organizationId, session.activeOrganizationId),
+				),
+				columns: { sshKeyId: true },
+			});
+			if (!key) return;
+		}
 
 		let clone = "";
 		if (application.sourceType === "github") {
