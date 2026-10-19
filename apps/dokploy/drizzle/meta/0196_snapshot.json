@@ -1,5 +1,5 @@
 {
-  "id": "4474f9e5-dc22-412a-9ef6-2356c5437979",
+  "id": "c9ad226a-7a8f-4c3b-8f04-fef6bccf9bfb",
   "prevId": "719d3b27-c42a-41e4-8b5d-b76b7d8de983",
   "version": "7",
   "dialect": "postgresql",
@@ -2685,6 +2685,13 @@
         },
         "isolatedDeploymentsVolume": {
           "name": "isolatedDeploymentsVolume",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "pullImages": {
+          "name": "pullImages",
           "type": "boolean",
           "primaryKey": false,
           "notNull": true,
@@ -8832,13 +8839,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": false
-        },
-        "domainRestrictionConfig": {
-          "name": "domainRestrictionConfig",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "'{\"enabled\":false,\"allowedWildcards\":[]}'::jsonb"
         },
         "cleanupCacheApplications": {
           "name": "cleanupCacheApplications",
