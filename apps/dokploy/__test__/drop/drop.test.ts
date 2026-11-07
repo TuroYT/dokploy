@@ -30,6 +30,7 @@ if (typeof window === "undefined") {
 
 const baseApp: ApplicationNested = {
 	railpackVersion: "0.15.4",
+	vulnerabilityScan: false,
 	applicationId: "",
 	previewLabels: [],
 	networkIds: [],

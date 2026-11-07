@@ -23,7 +23,7 @@ export const EnvRedeployAlert = ({ id, type, onDeployed }: Props) => {
 		postgres: () => api.postgres.deploy.useMutation(),
 		redis: () => api.redis.deploy.useMutation(),
 	};
-	const { mutateAsync, isPending } = mutationMap[type]() as {
+	const { mutateAsync, isPending } = mutationMap[type]() as unknown as {
 		mutateAsync: (input: Record<string, string>) => Promise<unknown>;
 		isPending: boolean;
 	};

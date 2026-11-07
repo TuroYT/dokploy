@@ -5,6 +5,7 @@ import { expect, test } from "vitest";
 const baseApp: ApplicationNested = {
 	railpackVersion: "0.15.4",
 	rollbackActive: false,
+	vulnerabilityScan: false,
 	applicationId: "",
 	previewLabels: [],
 	networkIds: [],
@@ -152,6 +153,10 @@ const baseDomain: Domain = {
 	middlewares: null,
 	forwardAuthEnabled: false,
 	enabled: true,
+	uptimeMonitor: false,
+	publicStatus: false,
+	uptimeStatus: null,
+	uptimeChangedAt: null,
 };
 
 const baseRedirect: Redirect = {

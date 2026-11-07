@@ -49,8 +49,9 @@ export const upsertEnvVars = (
 ) => {
 	const lines = parseEnv(text);
 	for (const { key, value } of vars) {
-		const index = lines.findLastIndex(
-			(l) => l.kind === "var" && l.key.trim() === key,
+		const index = lines.reduce(
+			(found, l, i) => (l.kind === "var" && l.key.trim() === key ? i : found),
+			-1,
 		);
 		if (index >= 0) {
 			lines[index] = { kind: "var", key, value };

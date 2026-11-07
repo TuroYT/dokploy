@@ -54,6 +54,10 @@ const domainFor = (uniqueConfigKey: number): Domain => ({
 	middlewares: null,
 	forwardAuthEnabled: false,
 	enabled: true,
+	uptimeMonitor: false,
+	publicStatus: false,
+	uptimeStatus: null,
+	uptimeChangedAt: null,
 });
 
 const keys = [1, 2, 3, 4, 5];

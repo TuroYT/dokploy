@@ -25,6 +25,10 @@ describe("createDomainLabels", () => {
 		middlewares: null,
 		forwardAuthEnabled: false,
 		enabled: true,
+		uptimeMonitor: false,
+		publicStatus: false,
+		uptimeStatus: null,
+		uptimeChangedAt: null,
 	};
 
 	it("should create basic labels for web entrypoint", async () => {

@@ -80,6 +80,10 @@ const domain: Domain = {
 	middlewares: null,
 	forwardAuthEnabled: false,
 	enabled: true,
+	uptimeMonitor: false,
+	publicStatus: false,
+	uptimeStatus: null,
+	uptimeChangedAt: null,
 };
 
 describe("compose services using YAML merge keys (#5625)", () => {
